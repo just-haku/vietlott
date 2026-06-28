@@ -1,0 +1,10 @@
+# Vietlott Deterministic Universe Pipeline
+# Core dependencies (cross-platform: Linux & Windows)
+
+# Web framework for dashboard
+flask>=3.0.0
+
+# HTTP client for LLM API calls (with connection pooling)
+requests>=2.31.0
+
+# ASGI/threading support

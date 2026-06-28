@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOUL · Vietlott Deterministic Universe</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Premium Backdrop Glows -->
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    <div class="glow glow-3"></div>
+
+    <div class="app-container">
+        <!-- Header Section -->
+        <header class="app-header">
+            <div class="header-logo-group">
+                <div class="logo-orb"></div>
+                <div>
+                    <h1>SOUL</h1>
+                    <p class="subtitle">Vietlott Deterministic Universe Investigation</p>
+                </div>
+            </div>
+            <blockquote class="einstein-quote">
+                "God does not play dice with the universe." — Albert Einstein
+            </blockquote>
+        </header>
+
+        <!-- Status & Control Banner -->
+        <section class="control-banner card">
+            <div class="status-indicator">
+                <span class="status-dot animate-pulse"></span>
+                <span class="status-text" id="engine-status-text">Connecting...</span>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-label">Uptime</span>
+                    <span class="stat-value" id="stat-uptime">0s</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Experiments</span>
+                    <span class="stat-value" id="stat-experiments">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Best Test Entropy</span>
+                    <span class="stat-value text-accent" id="stat-best-score">N/A</span>
+                </div>
+            </div>
+
+            <div class="control-buttons">
+                <button id="btn-start" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> Start Research
+                </button>
+                <button id="btn-stop" class="btn btn-danger" disabled>
+                    <svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> Stop
+                </button>
+            </div>
+        </section>
+
+        <!-- Main Dashboard Layout -->
+        <main class="dashboard-grid">
+            
+            <!-- Left Column: Brain Leaderboard & Timeline -->
+            <div class="dashboard-col col-left">
+                <!-- Leaderboard Module -->
+                <section id="panel-leaderboard" class="panel-section card lazy-section" data-module="leaderboard">
+                    <div class="panel-header">
+                        <h2>🏆 Top 5 Brains</h2>
+                        <span class="badge">Leaderboard</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="skeleton-loader">
+                            <div class="skeleton-line short"></div>
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Experiments Timeline Module -->
+                <section id="panel-experiments" class="panel-section card lazy-section" data-module="experiments">
+                    <div class="panel-header">
+                        <h2>📈 Experiment Timeline</h2>
+                        <div class="filter-group">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="improved">Kept</button>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="skeleton-loader">
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Column: AI Panel & Configuration -->
+            <div class="dashboard-col col-right">
+                <!-- AI Panel Module -->
+                <section id="panel-ai" class="panel-section card lazy-section" data-module="ai-panel">
+                    <div class="panel-header">
+                        <h2>🤖 AI Response Feed</h2>
+                        <div class="header-actions">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="ai-scroll-lock" checked>
+                                <span class="slider"></span>
+                                <span class="toggle-label">Autoscroll</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="panel-body feed-body">
+                        <div class="skeleton-loader">
+                            <div class="skeleton-card large"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Configuration Module -->
+                <section id="panel-config" class="panel-section card lazy-section" data-module="config">
+                    <div class="panel-header collapsible-header">
+                        <h2>⚙️ Engine Configuration</h2>
+                        <svg class="chevron-icon" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+                    </div>
+                    <div class="panel-body collapsible-body">
+                        <div class="skeleton-loader">
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+        </main>
+
+        <!-- Full Width Bottom Section: Data Explorer -->
+        <footer class="bottom-section">
+            <section id="panel-explorer" class="panel-section card lazy-section" data-module="data-explorer">
+                <div class="panel-header">
+                    <h2>📊 Vietlott Feature Explorer</h2>
+                    <div class="feature-selector-group">
+                        <select id="explorer-feature-select" class="select-input">
+                            <option value="A">Feature A (Main Sum)</option>
+                            <option value="B">Feature B (Main Sum Root)</option>
+                            <option value="C">Feature C (Total Sum)</option>
+                            <option value="D">Feature D (Total Sum Root)</option>
+                            <option value="E">Feature E (Main Tens Sum)</option>
+                            <option value="F">Feature F (Main Tens Sum Root)</option>
+                            <option value="G">Feature G (Main Units Sum)</option>
+                            <option value="H">Feature H (Main Units Sum Root)</option>
+                            <option value="I">Feature I (Total Tens Sum)</option>
+                            <option value="J">Feature J (Total Tens Sum Root)</option>
+                            <option value="K">Feature K (Total Units Sum)</option>
+                            <option value="L">Feature L (Total Units Sum Root)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="skeleton-loader">
+                        <div class="skeleton-card large"></div>
+                    </div>
+                </div>
+            </section>
+        </footer>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Dynamic JavaScript Loading -->
+    <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

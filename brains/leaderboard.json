@@ -1,0 +1,47 @@
+[
+  {
+    "id": "test_6",
+    "formulas": {},
+    "description": "Brain 6",
+    "test_entropy_score": 1.2000000000000002,
+    "train_entropy_score": 1.2999999999999998,
+    "created_at": "2026-06-28T06:54:14.737132+00:00",
+    "experiment_id": ""
+  },
+  {
+    "id": "test_5",
+    "formulas": {},
+    "description": "Brain 5",
+    "test_entropy_score": 1.5,
+    "train_entropy_score": 1.5,
+    "created_at": "2026-06-28T06:54:14.737121+00:00",
+    "experiment_id": ""
+  },
+  {
+    "id": "test_4",
+    "formulas": {},
+    "description": "Brain 4",
+    "test_entropy_score": 1.8,
+    "train_entropy_score": 1.7,
+    "created_at": "2026-06-28T06:54:14.737112+00:00",
+    "experiment_id": ""
+  },
+  {
+    "id": "test_3",
+    "formulas": {},
+    "description": "Brain 3",
+    "test_entropy_score": 2.1,
+    "train_entropy_score": 1.9,
+    "created_at": "2026-06-28T06:54:14.737101+00:00",
+    "experiment_id": ""
+  },
+  {
+    "id": "test_2",
+    "formulas": {},
+    "description": "Brain 2",
+    "test_entropy_score": 2.4,
+    "train_entropy_score": 2.1,
+    "created_at": "2026-06-28T06:54:14.737089+00:00",
+    "experiment_id": ""
+  }
+]
