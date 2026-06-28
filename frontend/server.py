@@ -40,14 +40,19 @@ except ImportError:
     _ANALYZER = None
 
 try:
-    from core.dataset import Dataset
-    _DATASET = Dataset(str(DATASET_PATH))
+    from core.dataset import DatasetManager
+    features_jsonl_path = PROJECT_ROOT / "data" / "features.jsonl"
+    if features_jsonl_path.exists():
+        _DATASET = DatasetManager(str(features_jsonl_path))
+    else:
+        _DATASET = None
 except (ImportError, Exception):
     _DATASET = None
 
 try:
     from core.brain import BrainManager
-    _BRAIN_MANAGER = BrainManager()
+    brains_dir = PROJECT_ROOT / "brains"
+    _BRAIN_MANAGER = BrainManager(str(brains_dir))
 except ImportError:
     _BRAIN_MANAGER = None
 
@@ -246,22 +251,46 @@ def _research_loop():
     # Try to use real engine
     if ResearchEngine and LLMClient:
         try:
+            from core.dataset import DatasetManager
+            from core.brain import BrainManager
+
+            features_path = PROJECT_ROOT / "data" / "features.jsonl"
+            brains_dir = PROJECT_ROOT / "brains"
+
+            dataset = DatasetManager(str(features_path), train_ratio=config.get("train_split", 0.85))
+            brain_manager = BrainManager(str(brains_dir))
+
             llm = LLMClient(
                 provider=config["provider"],
                 api_key=config["api_key"],
                 model=config["model"],
                 temperature=config["temperature"],
             )
-            engine = ResearchEngine(llm_client=llm, dataset_path=str(DATASET_PATH))
+            engine = ResearchEngine(
+                dataset=dataset,
+                brain_manager=brain_manager,
+                llm_client=llm,
+                config={"temperature": config["temperature"]}
+            )
             while _research_running:
-                result = engine.step()
+                result = engine.run_single_experiment()
+                status_val = "improved" if result.get("improved") else "discarded"
+                ui_result = {
+                    "id": result.get("experiment_id", f"exp-{_experiment_count:04d}"),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "description": result.get("description", ""),
+                    "train_score": result.get("train_score", 0.0),
+                    "test_score": result.get("test_score", 0.0),
+                    "status": status_val,
+                    "improved": result.get("improved", False)
+                }
                 with _lock:
                     _experiment_count += 1
-                    _current_experiment = result
-                    _experiments_log.append(result)
+                    _current_experiment = ui_result
+                    _experiments_log.append(ui_result)
                 _sse_queue.put(json.dumps({
-                    "type": "experiment",
-                    "data": result,
+                    "type": "experiment_complete",
+                    "data": ui_result,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }))
                 time.sleep(1)
@@ -287,13 +316,14 @@ def _research_loop():
                 "description": f"Mock iteration {_experiment_count}",
                 "train_score": round(random.uniform(0.3, 0.8), 4),
                 "test_score": round(random.uniform(0.3, 0.7), 4),
-                "status": "kept" if improved else "discarded",
+                "status": "improved" if improved else "discarded",
+                "improved": improved
             }
             _current_experiment = result
             _experiments_log.append(result)
 
         _sse_queue.put(json.dumps({
-            "type": "experiment",
+            "type": "experiment_complete",
             "data": result,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }))
@@ -350,8 +380,20 @@ def api_brains():
     """Return top-5 leaderboard."""
     if _BRAIN_MANAGER:
         try:
-            return jsonify(_BRAIN_MANAGER.get_top(5))
-        except Exception:
+            leaderboard = _BRAIN_MANAGER.get_leaderboard()
+            formatted = []
+            for i, brain in enumerate(leaderboard[:5]):
+                formatted.append({
+                    "rank": i + 1,
+                    "id": brain.id,
+                    "score": brain.test_entropy_score,
+                    "formulas": brain.formulas,
+                    "description": brain.description,
+                    "created_at": brain.created_at
+                })
+            return jsonify(formatted)
+        except Exception as e:
+            print(f"Error serving leaderboard: {e}")
             pass
     return jsonify(_mock_brains_data)
 
@@ -367,23 +409,16 @@ def api_experiments():
 @app.route("/api/features")
 def api_features():
     """Return processed feature data."""
-    if _ANALYZER and _DATASET:
-        try:
-            return jsonify(_ANALYZER.get_features(_DATASET))
-        except Exception:
-            pass
+    if _DATASET and getattr(_DATASET, "_features", None):
+        return jsonify(_DATASET._features)
     return jsonify(_mock_features_data)
 
 
 @app.route("/api/features/stats")
 def api_features_stats():
     """Return summary statistics for features."""
-    if _ANALYZER and _DATASET:
-        try:
-            features = _ANALYZER.get_features(_DATASET)
-            return jsonify(_mock_feature_stats(features))
-        except Exception:
-            pass
+    if _DATASET and getattr(_DATASET, "_features", None):
+        return jsonify(_mock_feature_stats(_DATASET._features))
     return jsonify(_mock_stats_data)
 
 

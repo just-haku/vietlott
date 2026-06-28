@@ -14,7 +14,7 @@ if not exist ".venv" (
     where uv >nul 2>nul
     if %errorlevel% equ 0 (
         uv venv
-        .venv\Scripts\pip install -r requirements.txt
+        uv pip install -r requirements.txt
     ) else (
         where python >nul 2>nul
         if %errorlevel% equ 0 (

@@ -65,7 +65,7 @@ def main():
 
     # Lazy imports after path setup
     from core.analyzer import Analyzer
-    from core.dataset import Dataset
+    from core.dataset import DatasetManager
     from core.brain import BrainManager
     from autoresearch.llm_client import LLMClient
     from autoresearch.engine import ResearchEngine
@@ -84,7 +84,7 @@ def main():
     print("VIETLOTT AUTO-RESEARCH ENGINE")
     print("=" * 60)
 
-    dataset = Dataset(features_path, window_size=args.window_size)
+    dataset = DatasetManager(features_path)
     print(f"Dataset loaded: {len(dataset.get_train())} train / {len(dataset.get_test())} test draws")
 
     # Step 3: Initialize components
@@ -103,6 +103,7 @@ def main():
         dataset=dataset,
         brain_manager=brain_manager,
         llm_client=llm_client,
+        config={'window_size': args.window_size}
     )
 
     # Graceful shutdown on Ctrl+C
