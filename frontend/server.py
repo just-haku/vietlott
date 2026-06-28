@@ -551,7 +551,7 @@ def main(host="0.0.0.0", port=5000, debug=False):
     print(f"\n  ✦ SOUL · Vietlott Deterministic Universe")
     print(f"  ✦ Dashboard: http://localhost:{port}")
     print(f"  ✦ API:       http://localhost:{port}/api/status\n")
-    app.run(host=host, port=port, debug=debug, threaded=True)
+    app.run(host=host, port=port, debug=debug, use_reloader=False, threaded=True)
 
 
 if __name__ == "__main__":

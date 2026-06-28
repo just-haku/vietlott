@@ -73,7 +73,7 @@ def main():
         host=args.host,
         port=args.port,
         debug=args.debug,
-        use_reloader=args.debug,
+        use_reloader=False,
         threaded=True,
     )
 

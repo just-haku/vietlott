@@ -9,6 +9,7 @@ the research loop. No heavy SDK dependencies.
 import json
 import logging
 import os
+import threading
 from pathlib import Path
 from typing import Optional
 
@@ -157,17 +158,34 @@ class LLMClient:
             'default_model', self._provider['default_model']
         )
 
-        # Resolve API key: explicit > config.json > env var
-        self._api_key = api_key
-        if not self._api_key:
-            config_key = f"{provider}_api_key"
-            self._api_key = self._config.get(config_key)
-        if not self._api_key:
-            self._api_key = os.environ.get(self._provider['env_key'], '')
+        # Resolve API keys: support single key, comma-separated keys, or a JSON list
+        raw_key = api_key
+        if not raw_key:
+            raw_key = self._config.get(f"{provider}_api_key")
+            if not raw_key:
+                raw_key = self._config.get(f"{provider}_api_keys")
 
-        if not self._api_key:
+        if not raw_key:
+            raw_key = os.environ.get(self._provider['env_key'], '')
+
+        self._api_keys = []
+        if isinstance(raw_key, list):
+            self._api_keys = [str(k).strip() for k in raw_key if str(k).strip()]
+        elif isinstance(raw_key, str) and raw_key:
+            if ',' in raw_key:
+                self._api_keys = [k.strip() for k in raw_key.split(',') if k.strip()]
+            elif '\n' in raw_key:
+                self._api_keys = [k.strip() for k in raw_key.split('\n') if k.strip()]
+            else:
+                self._api_keys = [raw_key.strip()]
+
+        # Setup thread-safe rotation
+        self._key_lock = threading.Lock()
+        self._key_index = 0
+
+        if not self._api_keys:
             logger.warning(
-                "No API key found for provider '%s'. "
+                "No API keys found for provider '%s'. "
                 "Set %s env var or add to config.json.",
                 provider, self._provider['env_key']
             )
@@ -176,9 +194,18 @@ class LLMClient:
         self._session = _build_session()
 
         logger.info(
-            "LLMClient initialized: provider=%s, model=%s",
-            provider, self._model
+            "LLMClient initialized: provider=%s, model=%s, keys_count=%d",
+            provider, self._model, len(self._api_keys)
         )
+
+    def _get_next_api_key(self) -> str:
+        """Rotate and return the next API key in the pool in a thread-safe manner."""
+        if not self._api_keys:
+            return ""
+        with self._key_lock:
+            key = self._api_keys[self._key_index]
+            self._key_index = (self._key_index + 1) % len(self._api_keys)
+            return key
 
     def generate(
         self,
@@ -188,7 +215,7 @@ class LLMClient:
         max_tokens: int = 4096,
     ) -> str:
         """
-        Generate a response from the LLM.
+        Generate a response from the LLM, rotating keys from the pool to avoid limits.
 
         Args:
             prompt: The user prompt.
@@ -201,18 +228,22 @@ class LLMClient:
 
         Raises:
             ConnectionError: If the API request fails after retries.
-            ValueError: If the response cannot be parsed.
+            ValueError: If the response cannot be parsed or no API key is set.
         """
+        key = self._get_next_api_key()
+        if not key:
+            raise ValueError(f"No API key configured for provider '{self._provider_name}'")
+
         if self._provider_name == 'google':
-            return self._generate_google(prompt, system_prompt, temperature, max_tokens)
+            return self._generate_google(prompt, system_prompt, temperature, max_tokens, key)
         elif self._provider_name == 'anthropic':
-            return self._generate_anthropic(prompt, system_prompt, temperature, max_tokens)
+            return self._generate_anthropic(prompt, system_prompt, temperature, max_tokens, key)
         else:
-            return self._generate_openai_compat(prompt, system_prompt, temperature, max_tokens)
+            return self._generate_openai_compat(prompt, system_prompt, temperature, max_tokens, key)
 
     def _generate_google(
         self, prompt: str, system_prompt: str,
-        temperature: float, max_tokens: int,
+        temperature: float, max_tokens: int, api_key: str
     ) -> str:
         """Google Gemini API (non-OpenAI format)."""
         endpoint = self._provider['endpoint_template'].format(model=self._model)
@@ -242,7 +273,7 @@ class LLMClient:
 
         response = self._session.post(
             endpoint,
-            params={'key': self._api_key},
+            params={'key': api_key},
             json=payload,
             timeout=120,
         )
@@ -259,7 +290,7 @@ class LLMClient:
 
     def _generate_openai_compat(
         self, prompt: str, system_prompt: str,
-        temperature: float, max_tokens: int,
+        temperature: float, max_tokens: int, api_key: str
     ) -> str:
         """OpenAI-compatible API (Groq, DeepSeek, OpenAI)."""
         endpoint = self._provider['endpoint']
@@ -277,7 +308,7 @@ class LLMClient:
 
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {self._api_key}',
+            'Authorization': f'Bearer {api_key}',
         }
 
         response = self._session.post(
@@ -297,7 +328,7 @@ class LLMClient:
 
     def _generate_anthropic(
         self, prompt: str, system_prompt: str,
-        temperature: float, max_tokens: int,
+        temperature: float, max_tokens: int, api_key: str
     ) -> str:
         """Anthropic Messages API."""
         endpoint = self._provider['endpoint']
@@ -313,7 +344,7 @@ class LLMClient:
 
         headers = {
             'Content-Type': 'application/json',
-            'x-api-key': self._api_key,
+            'x-api-key': api_key,
             'anthropic-version': '2023-06-01',
         }
 
@@ -345,7 +376,7 @@ class LLMClient:
             'provider': self._provider_name,
             'provider_name': self._provider['name'],
             'model': self._model,
-            'has_api_key': bool(self._api_key),
+            'has_api_key': len(self._api_keys) > 0,
             'auth_style': self._provider['auth_style'],
         }
 
