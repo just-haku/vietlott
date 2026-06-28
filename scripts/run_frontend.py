@@ -65,13 +65,6 @@ def main():
     print(f"   Debug mode: {'ON' if args.debug else 'OFF'}")
     print(f"   Press Ctrl+C to stop.\n")
 
-    # Open browser
-    if not args.no_browser and not args.debug:
-        import webbrowser
-        import threading
-        url = f"http://{'localhost' if args.host == '127.0.0.1' else args.host}:{args.port}"
-        threading.Timer(1.5, lambda: webbrowser.open(url)).start()
-
     # Import and run the Flask app
     from frontend.server import create_app
 
